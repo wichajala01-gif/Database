@@ -113,9 +113,45 @@ document.getElementById('retake').onclick = ()=>{
   statusText.textContent = 'พร้อมถ่ายภาพ';
 };
 
-document.getElementById('upload').onclick = ()=>{
-  statusText.textContent =
-    'ระบบบันทึกภาพจะเชื่อมต่อในขั้นตอนถัดไป';
+const SCRIPT_URL =
+'https://script.google.com/macros/s/AKfycbw0ydRXNx4gC6arYSOykMlcOmGKJ6uHIm9JlLzY4TCCxCVrKv0zUosAvuAKLWPw8WHa/exec';
+
+document.getElementById('upload').onclick = async ()=>{
+  if(!photoData) {
+    statusText.textContent = 'ไม่พบภาพ กรุณาถ่ายภาพใหม่';
+    return;
+  }
+
+  const uploadButton = document.getElementById('upload');
+
+  uploadButton.disabled = true;
+  uploadButton.textContent = 'กำลังส่งภาพ...';
+  statusText.textContent = 'กำลังบันทึกภาพลง Google Drive';
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        image: photoData
+      })
+    });
+
+    statusText.textContent =
+      'ส่งคำขอแล้ว กรุณาตรวจสอบภาพใน Google Drive';
+
+    uploadButton.textContent = 'ส่งคำขอแล้ว';
+
+  } catch(error) {
+    statusText.textContent =
+      'ส่งภาพไม่สำเร็จ กรุณาลองใหม่';
+
+    uploadButton.disabled = false;
+    uploadButton.textContent = 'ส่งภาพ';
+  }
 };
   
 startCamera();
