@@ -40,6 +40,11 @@ button.secondary{background:#64748b}
   <p>ถ่ายภาพเพื่อส่งงาน</p>
 
   <video id="camera" autoplay muted playsinline></video>
+
+  <button id="switchCamera" class="secondary">
+  🔄 สลับกล้องหน้า / กล้องหลัง
+  </button>
+  
   <img id="preview" alt="ตัวอย่างภาพ">
 
   <div id="status">กำลังเตรียมกล้อง...</div>
@@ -58,24 +63,41 @@ const canvas = document.getElementById('canvas');
 const statusText = document.getElementById('status');
 
 let photoData = '';
+let cameraStream = null;
+let cameraMode = 'environment';
 
 async function startCamera(){
-  try{
-    if(!navigator.mediaDevices?.getUserMedia){
-      throw new Error('เบราว์เซอร์ไม่รองรับการเปิดกล้อง');
+
+  try {
+
+    // ปิดกล้องเดิมก่อนสลับ
+    if(cameraStream){
+      cameraStream.getTracks().forEach(track => track.stop());
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'}},
-      audio:false
+    statusText.textContent = 'กำลังเปลี่ยนกล้อง...';
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: cameraMode }
+      },
+      audio: false
     });
 
-    video.srcObject = stream;
+    video.srcObject = cameraStream;
+
     await video.play();
-    statusText.textContent = 'พร้อมถ่ายภาพ';
-  }catch(error){
+
     statusText.textContent =
-      'เปิดกล้องไม่สำเร็จ: '+error.name+' - '+error.message;
+      cameraMode === 'environment'
+      ? 'กำลังใช้กล้องหลัง'
+      : 'กำลังใช้กล้องหน้า';
+
+  } catch(error) {
+
+    statusText.textContent =
+      'เปิดกล้องไม่สำเร็จ: ' + error.name;
+
   }
 }
 
@@ -99,6 +121,7 @@ document.getElementById('capture').onclick = ()=>{
   document.getElementById('capture').hidden = true;
   document.getElementById('retake').hidden = false;
   document.getElementById('upload').hidden = false;
+  document.getElementById('switchCamera').hidden = true;
   statusText.textContent = 'ตรวจสอบภาพก่อนส่ง';
 };
 
@@ -110,6 +133,7 @@ document.getElementById('retake').onclick = ()=>{
   document.getElementById('capture').hidden = false;
   document.getElementById('retake').hidden = true;
   document.getElementById('upload').hidden = true;
+  document.getElementById('switchCamera').hidden = false;
   statusText.textContent = 'พร้อมถ่ายภาพ';
 };
 
@@ -152,6 +176,17 @@ document.getElementById('upload').onclick = async ()=>{
     uploadButton.disabled = false;
     uploadButton.textContent = 'ส่งภาพ';
   }
+};
+
+document.getElementById('switchCamera').onclick = async () => {
+
+  cameraMode =
+    cameraMode === 'environment'
+    ? 'user'
+    : 'environment';
+
+  await startCamera();
+
 };
   
 startCamera();
